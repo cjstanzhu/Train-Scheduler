@@ -24,39 +24,47 @@ $(document).ready(function() {
 
         trainName = $("#train-name-input").val().trim();
         destination = $("#destination-input").val().trim();
-        startTime = $("#start-time-input").val().trim(); //placeholder
+        startTime = $("#start-time-input").val().trim();
         frequency = $("#frequency-input").val().trim();
 
-        var newTrain = {
-            trainName: trainName,
-            destination: destination,
-            startTime: startTime,
-            frequency: frequency
+        if (trainName === "" || destination === "" || startTime === "" || frequency === "") {
+            alert("Please fill in all the input fields.");
+        } else {
+            var newTrain = {
+                trainName: trainName,
+                destination: destination,
+                startTime: startTime,
+                frequency: frequency
+            };
+
+            database.ref().push(newTrain);
+
+            $("#train-name-input").val("");
+            $("#destination-input").val("");
+            $("#start-time-input").val("");
+            $("#frequency-input").val("");
         };
-
-        database.ref().push(newTrain);
-
-        $("#train-name-input").val("");
-        $("#destination-input").val("");
-        $("#start-time-input").val("");
-        $("#frequency-input").val("");
     });
 
     database.ref().on("child_added", function(snapshot) {
-        var newRow = $("<tr>")
+        var startTimeConverted = moment(snapshot.val().startTime, "HH:mm").subtract(1, "years");
+        var differenceTime = moment().diff(startTimeConverted, "minutes");
+        var minutesAway = snapshot.val().frequency - (differenceTime % snapshot.val().frequency);
+        var nextArrival = moment().add(minutesAway, "minutes");
+
+        var newTableRow = $("<tr>");
         
-        newRow.append(
+        newTableRow.append(
             $("<td>").text(snapshot.val().trainName),
             $("<td>").text(snapshot.val().destination),
             $("<td>").text(snapshot.val().frequency),
-            $("<td>").text("placeholder"),
-            $("<td>").text("placeholder")
+            $("<td>").text(moment(nextArrival).format("hh:mm A")),
+            $("<td>").text(minutesAway)
           );
         
-        $("#train-table > tbody").append(newRow);
-
+        $("#train-table > tbody").append(newTableRow);
     });
-
+    
 });
 
 
